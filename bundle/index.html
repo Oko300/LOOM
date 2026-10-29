@@ -74,22 +74,23 @@
     #connect-view {
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 40px;
+      justify-content: flex-start;
+      padding: 20px 40px 16px;
       text-align: center;
+      overflow-y: auto;
     }
-    .connect-icon { font-size: 48px; margin-bottom: 20px; }
-    .connect-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    .connect-sub { color: var(--text-muted); max-width: 440px; margin-bottom: 32px; line-height: 1.7; }
+    .connect-icon { font-size: 36px; margin-bottom: 10px; }
+    .connect-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .connect-sub { color: var(--text-muted); max-width: 440px; margin-bottom: 18px; line-height: 1.6; font-size: 13px; }
     .steps-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 24px 28px;
+      padding: 16px 20px;
       max-width: 480px;
       width: 100%;
       text-align: left;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
     .steps-card h3 {
       font-size: 11px;
@@ -99,7 +100,7 @@
       letter-spacing: 0.5px;
       margin-bottom: 16px;
     }
-    .step-row { display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px; align-items: flex-start; }
+    .step-row { display: flex; gap: 10px; margin-bottom: 10px; font-size: 12px; align-items: flex-start; }
     .step-row:last-child { margin-bottom: 0; }
     .step-num {
       width: 22px; height: 22px; border-radius: 50%;
@@ -494,7 +495,13 @@
 
 <script src="anna-tool-ids.js"></script>
 <script type="module">
-import { AnnaAppRuntime } from '/static/anna-apps/_sdk/latest/index.js';
+let AnnaAppRuntime;
+try {
+  const mod = await import('/static/anna-apps/_sdk/latest/index.js');
+  AnnaAppRuntime = mod.AnnaAppRuntime;
+} catch (e) {
+  console.warn('[Loom] Anna SDK import failed:', e.message);
+}
 
 // ═══════════════════════════════════════════
 //  STATE
@@ -508,14 +515,17 @@ let isWaiting = false;
 //  ANNA SDK — connect + wrap tool calls
 // ═══════════════════════════════════════════
 async function ensureAnna() {
-  if (!anna) anna = await AnnaAppRuntime.connect();
+  if (!anna) {
+    if (!AnnaAppRuntime) throw new Error('Anna SDK unavailable. Make sure this app is open inside Anna AI.');
+    anna = await AnnaAppRuntime.connect();
+  }
   return anna;
 }
 
 async function invokeTool(name, params = {}) {
   const sdk = await ensureAnna();
   const toolId = (window.__ANNA_TOOL_IDS__ || {})['loom-agent'];
-  if (!toolId) throw new Error('Tool ID mapping not found. anna-tool-ids.js may not have loaded.');
+  if (!toolId) throw new Error('anna-tool-ids.js did not load — tool ID missing. Try refreshing the app.');
   const result = await sdk.tools.invoke({ tool_id: toolId, method: name, args: params });
   if (result && result.success === false) throw new Error(result.error || 'Executa returned failure');
   return result && result.data !== undefined ? result.data : result;
