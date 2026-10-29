@@ -66,7 +66,6 @@ jobs:
         shell: bash
         run: |
           cd executas/loom-agent/dist-bin
-          # Rename whatever pkg produced to the canonical entry name
           for f in *; do
             [ -f "$f" ] && mv "$f" "${{ matrix.entry }}" && break
           done
@@ -77,10 +76,15 @@ jobs:
         if: matrix.ext == 'zip'
         shell: pwsh
         run: |
-          $src = Get-ChildItem "executas\loom-agent\dist-bin" | Select-Object -First 1
-          Rename-Item $src.FullName "${{ matrix.entry }}"
+          $distBin = "executas\loom-agent\dist-bin"
+          $dest = "${{ matrix.entry }}"
+          $src = Get-ChildItem $distBin | Select-Object -First 1
+          # Only rename if the file is not already named correctly
+          if ($src.Name -ne $dest) {
+            Rename-Item $src.FullName $dest
+          }
           Compress-Archive -Force `
-            -Path "executas\loom-agent\dist-bin\${{ matrix.entry }}" `
+            -Path "$distBin\$dest" `
             -DestinationPath "executas\loom-agent\dist\loom-agent-1.0.2-${{ matrix.platform }}.zip"
 
       - name: Upload artifact
