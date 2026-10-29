@@ -132,21 +132,39 @@ async function askLLM(systemPrompt, userMessage) {
 
 // check_connection — verify FlowDev bridge is live
 async function checkConnection(params) {
-  const token = await getCredential('flowdev_token');
+  // If the UI passed a token directly, save it to the credential vault first
+  let token = params && params.token ? params.token.trim() : null;
+
+  if (token) {
+    // Save to Anna credential vault so future calls don't need the UI input
+    try {
+      await callHost('credentials/set', { id: 'flowdev_token', value: token });
+    } catch (e) {
+      process.stderr.write(`[loom] credentials/set failed: ${e.message}\n`);
+    }
+    // Also save to Anna storage as fallback
+    await storageSet('loom:token', token);
+  } else {
+    // Try credential vault, then storage fallback
+    token = await getCredential('flowdev_token');
+    if (!token) token = await storageGet('loom:token');
+  }
+
   if (!token) {
     return {
       connected: false,
-      message: 'No FlowDev token found. Go to flowdev.onrender.com/request to get your free token, then add it in Loom settings.'
+      message: 'No FlowDev token found. Go to flowdev.onrender.com/request to get your free token, then paste it in the field above.'
     };
   }
+
   connectFlowDev(token);
-  await new Promise(r => setTimeout(r, 2000)); // wait for socket
+  await new Promise(r => setTimeout(r, 2500)); // wait for socket handshake
   const connected = fdSocket && fdSocket.connected;
   return {
     connected,
     message: connected
       ? 'VS Code workspace connected. Ready to start a session.'
-      : 'FlowDev token found but extension is not connected. Open VS Code, install the FlowDev extension, and paste your token.'
+      : 'Token saved but FlowDev extension is not connected. Open VS Code, install the FlowDev MCP extension, paste your token there, and click Connect.'
   };
 }
 
@@ -168,12 +186,13 @@ async function getMemory(params) {
 
 // start_session — scan workspace + load memory + return context summary
 async function startSession(params) {
-  // 1. Get FlowDev token
-  const token = await getCredential('flowdev_token');
+  // 1. Get FlowDev token (vault first, storage fallback)
+  let token = await getCredential('flowdev_token');
+  if (!token) token = await storageGet('loom:token');
   if (!token) {
     return {
       success: false,
-      error: 'No FlowDev token. Visit flowdev.onrender.com/request to get your free access token.'
+      error: 'No FlowDev token. Click Check Connection on the setup screen and paste your token.'
     };
   }
 
@@ -268,7 +287,8 @@ Only output the JSON object. No explanation, no markdown fences.`;
 async function chat(params) {
   const { message, conversationHistory = [] } = params;
 
-  const token = await getCredential('flowdev_token');
+  let token = await getCredential('flowdev_token');
+  if (!token) token = await storageGet('loom:token');
   if (token) {
     connectFlowDev(token);
     await new Promise(r => setTimeout(r, 1000));

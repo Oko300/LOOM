@@ -409,6 +409,18 @@
         <div class="step-text">Add your FlowDev token to Loom's settings, then click <strong>Check Connection</strong> below</div>
       </div>
     </div>
+    <div style="max-width:480px;width:100%;margin-bottom:12px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.3px">FLOWDEV TOKEN</label>
+      <input
+        type="password"
+        id="token-input"
+        placeholder="Paste your FlowDev token here…"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color 0.15s"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+      />
+      <p style="font-size:11px;color:var(--text-muted);margin-top:5px">Your token is stored securely in Anna's credential vault and never shared.</p>
+    </div>
     <div id="connect-error" class="alert alert-error" style="display:none;max-width:480px;width:100%;text-align:left"></div>
     <div class="connect-actions">
       <button class="btn btn-primary" id="check-btn" onclick="checkConnection()">
@@ -531,6 +543,16 @@ async function checkConnection() {
   const btn = document.getElementById('check-btn');
   const btnText = document.getElementById('check-btn-text');
   const errEl = document.getElementById('connect-error');
+  const tokenInput = document.getElementById('token-input');
+  const token = tokenInput ? tokenInput.value.trim() : '';
+
+  if (tokenInput && !token) {
+    errEl.textContent = 'Please paste your FlowDev token above before checking the connection.';
+    errEl.style.display = 'block';
+    tokenInput.style.borderColor = 'var(--red)';
+    return;
+  }
+  if (tokenInput) tokenInput.style.borderColor = 'var(--border)';
 
   btn.disabled = true;
   btnText.innerHTML = '<span class="spinner"></span> Checking…';
@@ -538,7 +560,7 @@ async function checkConnection() {
   setStatus('loading', 'Connecting…');
 
   try {
-    const result = await invokeTool('check_connection');
+    const result = await invokeTool('check_connection', token ? { token } : {});
     if (result.connected) {
       setStatus('connected', 'VS Code Connected');
       await loadMemoryView();
