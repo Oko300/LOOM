@@ -1,0 +1,9 @@
+{
+  "$schema": "anna-executa-identity/v1",
+  "host": "https://anna.partners",
+  "executa_id": 1259,
+  "tool_id": "tool-300joh_4537-loom-agent-qzqg3mpc",
+  "slug": "loom-agent",
+  "executa_type": "tool",
+  "first_published_at": "2026-10-24T23:37:15.008Z"
+}

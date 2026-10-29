@@ -1,0 +1,32 @@
+{
+  "name": "loom-agent",
+  "version": "1.0.2",
+  "description": "Loom backend executa — project memory + FlowDev bridge",
+  "main": "index.js",
+  "type": "commonjs",
+  "bin": {
+    "loom-agent": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build": "npx --yes @yao-pkg/pkg . --targets node18-macos-arm64,node18-macos-x64,node18-linux-x64,node18-win-x64 --out-path dist-bin",
+    "package": "node build.js"
+  },
+  "pkg": {
+    "assets": [],
+    "scripts": [],
+    "targets": [
+      "node18-macos-arm64",
+      "node18-macos-x64",
+      "node18-linux-x64",
+      "node18-win-x64"
+    ],
+    "outputPath": "dist-bin"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^5.12.0"
+  }
+}

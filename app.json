@@ -1,0 +1,14 @@
+{
+  "slug": "loom",
+  "name": "Loom",
+  "tagline": "The AI coding assistant that remembers your project",
+  "description": "Loom remembers your project across every session — your stack, your decisions, what you tried, where you left off. Connect your VS Code workspace through the FlowDev extension and never waste time re-explaining context to an AI again.",
+  "version": "1.0.0",
+  "category": "developer-tools",
+  "icon": "🧵",
+  "author": "FlowDev",
+  "website": "https://flowdev.onrender.com",
+  "bundled_executas": {
+    "loom-agent": { "path": "executas/loom-agent" }
+  }
+}

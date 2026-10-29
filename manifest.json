@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "required_executas": [
+    {
+      "tool_id": "bundled:loom-agent",
+      "min_version": "1.0.2",
+      "version": "latest"
+    }
+  ],
+  "system_prompt_addendum": "Loom is an AI coding assistant that remembers your project across every session — your stack, decisions, what you tried, and where you left off. When the user wants to code, start a project session, or asks what they were working on, open the Loom workspace view.",
+  "ui": {
+    "bundle": {
+      "format": "static-spa",
+      "entry": "index.html"
+    },
+    "views": [
+      {
+        "name": "main",
+        "title": "Loom — Project Memory",
+        "default": true,
+        "default_size": { "w": 960, "h": 640 },
+        "min_size": { "w": 640, "h": 480 },
+        "max_size": { "w": 1920, "h": 1080 },
+        "single_instance": true
+      }
+    ],
+    "host_api": {
+      "tools": ["required:bundled:loom-agent"],
+      "storage": ["get", "set", "delete", "list"]
+    }
+  }
+}

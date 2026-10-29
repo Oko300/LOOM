@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loom</title>
+  <style>
+    /* === RESET & BASE === */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #6366f1;
+      --accent-hover: #5558e3;
+      --green: #4ade80;
+      --green-bg: #14532d;
+      --red: #f87171;
+      --red-bg: #3b1515;
+      --blue: #60a5fa;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* === LAYOUT === */
+    #app { height: 100vh; display: flex; flex-direction: column; }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo span { color: var(--accent); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .dot.green { background: var(--green); }
+    .dot.yellow { background: #facc15; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* Views */
+    .view { flex: 1; overflow: hidden; display: none; }
+    .view.active { display: flex; }
+
+    /* === CONNECT VIEW === */
+    #connect-view {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+    }
+    .connect-icon { font-size: 48px; margin-bottom: 20px; }
+    .connect-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .connect-sub { color: var(--text-muted); max-width: 440px; margin-bottom: 32px; line-height: 1.7; }
+    .steps-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px 28px;
+      max-width: 480px;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .steps-card h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    .step-row { display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px; align-items: flex-start; }
+    .step-row:last-child { margin-bottom: 0; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { color: var(--text-muted); line-height: 1.6; }
+    .step-text strong { color: var(--text); }
+    .step-text a { color: var(--accent); text-decoration: none; }
+    .step-text a:hover { text-decoration: underline; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, opacity 0.15s;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 4px; }
+
+    .connect-actions { display: flex; gap: 10px; align-items: center; max-width: 480px; width: 100%; flex-wrap: wrap; }
+
+    /* === MEMORY VIEW === */
+    #memory-view {
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .memory-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .memory-project-header { margin-bottom: 24px; }
+    .memory-project-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .memory-project-purpose { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+    .memory-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+    }
+    .memory-card h3 {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .memory-value { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Consolas', 'SF Mono', monospace;
+    }
+    .bullet-list { list-style: none; }
+    .bullet-list li { padding: 3px 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+    .bullet-list li::before { content: '—'; margin-right: 8px; color: var(--border); }
+    .last-updated { font-size: 11px; color: var(--text-muted); margin-top: 12px; padding-bottom: 4px; }
+
+    .empty-memory {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      text-align: center;
+      height: 100%;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 16px; }
+    .empty-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty-sub { color: var(--text-muted); max-width: 360px; margin-bottom: 0; line-height: 1.7; }
+
+    .start-bar {
+      flex-shrink: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* === CHAT VIEW === */
+    #chat-view { flex-direction: row; overflow: hidden; }
+
+    .memory-panel {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .memory-panel-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .memory-panel-header h3 {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .memory-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+    }
+    .mem-field { margin-bottom: 16px; }
+    .mem-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+    }
+    .mem-val { font-size: 12px; color: var(--text); line-height: 1.5; }
+    .mem-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mem-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-family: 'Consolas', 'SF Mono', monospace;
+      color: var(--text-muted);
+    }
+    .panel-footer {
+      flex-shrink: 0;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Chat panel */
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .message { display: flex; gap: 10px; max-width: 88%; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .msg-avatar.user { background: var(--accent); }
+    .msg-avatar.assistant { background: var(--surface2); border: 1px solid var(--border); }
+    .msg-bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .message.user .msg-bubble {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .msg-bubble.loading { color: var(--text-muted); font-style: italic; }
+
+    .typing-dots span {
+      display: inline-block;
+      animation: blink 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+    .chat-input-bar {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      line-height: 1.5;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    /* === SHARED ALERTS === */
+    .alert {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .alert-error { background: var(--red-bg); color: var(--red); border: 1px solid #7f1d1d; }
+    .alert-success { background: var(--green-bg); color: var(--green); border: 1px solid #166534; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">🧵 <span>Loom</span></div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Initializing...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       VIEW 1: CONNECT
+  ══════════════════════════════════════════ -->
+  <div id="connect-view" class="view active">
+    <div class="connect-icon">🔌</div>
+    <div class="connect-title">Connect your workspace</div>
+    <p class="connect-sub">Loom needs the FlowDev VS Code extension to access your project files and build persistent memory of your project.</p>
+    <div class="steps-card">
+      <h3>One-time setup</h3>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-text">Get a free token at <a href="https://flowdev.onrender.com/request" target="_blank">flowdev.onrender.com/request</a></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-text">Install <strong>FlowDev MCP</strong> from the VS Code Extension Marketplace</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-text">Paste your token in the FlowDev sidebar in VS Code and click <strong>Connect</strong></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-text">Add your FlowDev token to Loom's settings, then click <strong>Check Connection</strong> below</div>
+      </div>
+    </div>
+    <div id="connect-error" class="alert alert-error" style="display:none;max-width:480px;width:100%;text-align:left"></div>
+    <div class="connect-actions">
+      <button class="btn btn-primary" id="check-btn" onclick="checkConnection()">
+        <span id="check-btn-text">Check Connection</span>
+      </button>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:16px;max-width:480px;text-align:center">
+      Your token is stored securely in Anna's credential vault. This setup is one-time only.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       VIEW 2: MEMORY
+  ══════════════════════════════════════════ -->
+  <div id="memory-view" class="view">
+    <div class="memory-scroll">
+      <div id="memory-content"></div>
+    </div>
+    <div class="start-bar">
+      <button class="btn btn-primary" id="start-btn" onclick="startSession()">
+        <span id="start-btn-text">▶ Start Session</span>
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="checkConnection()">Reconnect</button>
+      <span id="start-error" style="font-size:12px;color:var(--red);display:none;margin-left:4px"></span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       VIEW 3: CHAT
+  ══════════════════════════════════════════ -->
+  <div id="chat-view" class="view">
+
+    <!-- Memory Sidebar -->
+    <div class="memory-panel">
+      <div class="memory-panel-header">
+        <h3>Project Memory</h3>
+      </div>
+      <div class="memory-panel-body" id="panel-memory-content">
+        <!-- filled by JS -->
+      </div>
+      <div class="panel-footer">
+        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="goToMemory()">← Back to Memory</button>
+      </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-panel">
+      <div class="messages" id="messages">
+        <div class="message assistant">
+          <div class="msg-avatar assistant">🧵</div>
+          <div class="msg-bubble" id="welcome-msg">
+            <span class="typing-dots"><span>●</span><span>●</span><span>●</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <textarea
+          class="chat-input"
+          id="chat-input"
+          placeholder="Ask Loom anything about your project…"
+          rows="1"
+          onkeydown="handleKey(event)"
+        ></textarea>
+        <button class="btn btn-primary btn-sm" id="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /#app -->
+
+<script src="anna-tool-ids.js"></script>
+<script type="module">
+import { AnnaAppRuntime } from '/static/anna-apps/_sdk/latest/index.js';
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let anna = null;
+let currentMemory = null;
+let conversationHistory = [];
+let isWaiting = false;
+
+// ═══════════════════════════════════════════
+//  ANNA SDK — connect + wrap tool calls
+// ═══════════════════════════════════════════
+async function ensureAnna() {
+  if (!anna) anna = await AnnaAppRuntime.connect();
+  return anna;
+}
+
+async function invokeTool(name, params = {}) {
+  const sdk = await ensureAnna();
+  const toolId = (window.__ANNA_TOOL_IDS__ || {})['loom-agent'];
+  if (!toolId) throw new Error('Tool ID mapping not found. anna-tool-ids.js may not have loaded.');
+  const result = await sdk.tools.invoke({ tool_id: toolId, method: name, args: params });
+  if (result && result.success === false) throw new Error(result.error || 'Executa returned failure');
+  return result && result.data !== undefined ? result.data : result;
+}
+
+// ═══════════════════════════════════════════
+//  VIEW MANAGEMENT
+// ═══════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`${name}-view`).classList.add('active');
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('status-dot');
+  const label = document.getElementById('status-text');
+  dot.className = 'dot' + (state === 'connected' ? ' green' : state === 'loading' ? ' yellow' : '');
+  label.textContent = text;
+}
+
+// ═══════════════════════════════════════════
+//  CHECK CONNECTION
+// ═══════════════════════════════════════════
+async function checkConnection() {
+  const btn = document.getElementById('check-btn');
+  const btnText = document.getElementById('check-btn-text');
+  const errEl = document.getElementById('connect-error');
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Checking…';
+  errEl.style.display = 'none';
+  setStatus('loading', 'Connecting…');
+
+  try {
+    const result = await invokeTool('check_connection');
+    if (result.connected) {
+      setStatus('connected', 'VS Code Connected');
+      await loadMemoryView();
+    } else {
+      setStatus('', 'Not connected');
+      errEl.textContent = result.message;
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    setStatus('', 'Error');
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Check Connection';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MEMORY VIEW
+// ═══════════════════════════════════════════
+async function loadMemoryView() {
+  showView('memory');
+  const container = document.getElementById('memory-content');
+  container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Loading memory…</div>';
+
+  try {
+    const result = await invokeTool('get_memory');
+    if (!result.exists || !result.memory) {
+      container.innerHTML = `
+        <div class="empty-memory">
+          <div class="empty-icon">🌱</div>
+          <div class="empty-title">No project memory yet</div>
+          <p class="empty-sub">Hit <strong>Start Session</strong> and Loom will scan your workspace and build a permanent memory of your project.</p>
+        </div>`;
+    } else {
+      currentMemory = result.memory;
+      container.innerHTML = renderMemoryCards(currentMemory);
+    }
+  } catch (e) {
+    container.innerHTML = `<div class="alert alert-error">Failed to load memory: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderMemoryCards(m) {
+  const sections = [];
+
+  sections.push(`
+    <div class="memory-project-header">
+      <div class="memory-project-name">${escHtml(m.project_name || 'Your Project')}</div>
+      <div class="memory-project-purpose">${escHtml(m.purpose || '')}</div>
+    </div>`);
+
+  if (m.stack?.length) {
+    sections.push(`
+      <div class="memory-card">
+        <h3>Stack</h3>
+        <div class="tag-list">${m.stack.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>
+      </div>`);
+  }
+
+  if (m.current_focus) {
+    sections.push(`
+      <div class="memory-card">
+        <h3>Current Focus</h3>
+        <div class="memory-value">${escHtml(m.current_focus)}</div>
+      </div>`);
+  }
+
+  if (m.where_left_off) {
+    sections.push(`
+      <div class="memory-card">
+        <h3>Where You Left Off</h3>
+        <div class="memory-value">${escHtml(m.where_left_off)}</div>
+      </div>`);
+  }
+
+  if (m.key_decisions?.length) {
+    sections.push(`
+      <div class="memory-card">
+        <h3>Key Decisions</h3>
+        <ul class="bullet-list">${m.key_decisions.map(d => `<li>${escHtml(d)}</li>`).join('')}</ul>
+      </div>`);
+  }
+
+  if (m.tried_and_abandoned?.length) {
+    sections.push(`
+      <div class="memory-card">
+        <h3>Tried &amp; Abandoned</h3>
+        <ul class="bullet-list">${m.tried_and_abandoned.map(d => `<li>${escHtml(d)}</li>`).join('')}</ul>
+      </div>`);
+  }
+
+  if (m.last_updated) {
+    sections.push(`<div class="last-updated">Last updated: ${new Date(m.last_updated).toLocaleString()}</div>`);
+  }
+
+  return sections.join('');
+}
+
+// ═══════════════════════════════════════════
+//  START SESSION
+// ═══════════════════════════════════════════
+async function startSession() {
+  const btn = document.getElementById('start-btn');
+  const btnText = document.getElementById('start-btn-text');
+  const errEl = document.getElementById('start-error');
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Scanning workspace…';
+  errEl.style.display = 'none';
+
+  try {
+    const result = await invokeTool('start_session');
+    if (!result.success) {
+      errEl.textContent = result.error;
+      errEl.style.display = 'inline';
+      return;
+    }
+    currentMemory = result.summary;
+    conversationHistory = [];
+    showChatView(result);
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'inline';
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '▶ Start Session';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  CHAT VIEW
+// ═══════════════════════════════════════════
+function showChatView(sessionResult) {
+  showView('chat');
+
+  const m = sessionResult.summary;
+
+  // Populate memory sidebar
+  const panel = document.getElementById('panel-memory-content');
+  let panelHTML = '';
+
+  if (m.project_name) {
+    panelHTML += `<div class="mem-field"><div class="mem-label">Project</div><div class="mem-val" style="font-weight:600">${escHtml(m.project_name)}</div></div>`;
+  }
+  if (m.stack?.length) {
+    panelHTML += `<div class="mem-field"><div class="mem-label">Stack</div><div class="mem-tags">${m.stack.map(t => `<span class="mem-tag">${escHtml(t)}</span>`).join('')}</div></div>`;
+  }
+  if (m.current_focus) {
+    panelHTML += `<div class="mem-field"><div class="mem-label">Current Focus</div><div class="mem-val">${escHtml(m.current_focus)}</div></div>`;
+  }
+  if (m.where_left_off) {
+    panelHTML += `<div class="mem-field"><div class="mem-label">Left Off</div><div class="mem-val">${escHtml(m.where_left_off)}</div></div>`;
+  }
+  if (m.key_decisions?.length) {
+    panelHTML += `<div class="mem-field"><div class="mem-label">Key Decisions</div><div class="mem-val">${m.key_decisions.map(d => `• ${escHtml(d)}`).join('<br>')}</div></div>`;
+  }
+
+  panel.innerHTML = panelHTML;
+
+  // Set welcome message
+  const welcomeMsg = document.getElementById('welcome-msg');
+  if (welcomeMsg) {
+    if (sessionResult.isFirstSession) {
+      welcomeMsg.textContent = `First session for ${m.project_name || 'this project'}. I've scanned your workspace and built an initial memory. What would you like to work on?`;
+    } else {
+      welcomeMsg.textContent = `Welcome back to ${m.project_name || 'your project'}. I remember where you left off: ${m.where_left_off || 'your last session'}. What would you like to work on?`;
+    }
+  }
+
+  document.getElementById('chat-input').focus();
+}
+
+async function goToMemory() {
+  try { await invokeTool('end_session', {}); } catch {}
+  await loadMemoryView();
+}
+
+// ═══════════════════════════════════════════
+//  CHAT
+// ═══════════════════════════════════════════
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  if (isWaiting) return;
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  isWaiting = true;
+
+  document.getElementById('send-btn').disabled = true;
+
+  appendMessage('user', message);
+  const loadingBubble = appendLoadingMessage();
+
+  try {
+    const result = await invokeTool('chat', { message, conversationHistory });
+    const reply = result.response || result.error || 'No response received.';
+    loadingBubble.className = 'msg-bubble';
+    loadingBubble.textContent = reply;
+
+    conversationHistory.push({ role: 'user', content: message });
+    conversationHistory.push({ role: 'assistant', content: reply });
+    if (conversationHistory.length > 20) {
+      conversationHistory = conversationHistory.slice(-20);
+    }
+  } catch (e) {
+    loadingBubble.className = 'msg-bubble';
+    loadingBubble.textContent = `Error: ${e.message}`;
+  } finally {
+    isWaiting = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+function appendMessage(role, text) {
+  const messages = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `msg-avatar ${role}`;
+  avatar.textContent = role === 'user' ? '👤' : '🧵';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  messages.appendChild(wrapper);
+  messages.scrollTop = messages.scrollHeight;
+  return bubble;
+}
+
+function appendLoadingMessage() {
+  const messages = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message assistant';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar assistant';
+  avatar.textContent = '🧵';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble loading';
+  bubble.innerHTML = '<span class="typing-dots"><span>●</span><span>●</span><span>●</span></span>';
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  messages.appendChild(wrapper);
+  messages.scrollTop = messages.scrollHeight;
+  return bubble;
+}
+
+// ═══════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Auto-resize textarea
+document.getElementById('chat-input').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ═══════════════════════════════════════════
+//  EXPOSE TO window (required for inline onclick in module scripts)
+// ═══════════════════════════════════════════
+window.checkConnection = checkConnection;
+window.startSession   = startSession;
+window.sendMessage    = sendMessage;
+window.handleKey      = handleKey;
+window.goToMemory     = goToMemory;
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.addEventListener('load', () => {
+  setStatus('loading', 'Initializing…');
+
+  // Give Anna 800ms to inject its SDK, then check connection
+  setTimeout(async () => {
+    try {
+      const result = await invokeTool('check_connection');
+      if (result.connected) {
+        setStatus('connected', 'VS Code Connected');
+        await loadMemoryView();
+      } else {
+        setStatus('', 'Setup required');
+        showView('connect');
+      }
+    } catch {
+      // No Anna SDK (direct browser preview) — show connect view with a note
+      setStatus('', 'Outside Anna');
+      showView('connect');
+      const errEl = document.getElementById('connect-error');
+      errEl.textContent = 'Running outside Anna AI. Open this app inside the Anna platform to connect your workspace.';
+      errEl.style.display = 'block';
+    }
+  }, 800);
+});
+</script>
+</body>
+</html>

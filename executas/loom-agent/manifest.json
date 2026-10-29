@@ -1,0 +1,84 @@
+{
+  "name": "loom-agent",
+  "display_name": "Loom Agent",
+  "version": "1.0.2",
+  "description": "AI-powered project memory engine. Uses Anna LLM to analyze VS Code workspaces and power context-aware coding conversations.",
+  "host_capabilities": ["llm.sample", "aps.kv"],
+  "credentials": [
+    {
+      "id": "flowdev_token",
+      "name": "FlowDev Token",
+      "description": "Your FlowDev VS Code extension token from flowdev.onrender.com/request",
+      "required": true,
+      "sensitive": true
+    }
+  ],
+  "tools": [
+    {
+      "name": "check_connection",
+      "description": "Check if the FlowDev VS Code extension is connected and the token is valid",
+      "parameters": [],
+      "timeout": 30
+    },
+    {
+      "name": "get_memory",
+      "description": "Get the stored project memory for the current workspace",
+      "parameters": [],
+      "timeout": 30
+    },
+    {
+      "name": "start_session",
+      "description": "Start a Loom session — scans the workspace and loads project memory using Anna AI analysis",
+      "parameters": [],
+      "timeout": 90
+    },
+    {
+      "name": "chat",
+      "description": "Send a message to Loom. Uses Anna LLM with full project context to give intelligent, project-aware responses",
+      "parameters": [
+        {
+          "name": "message",
+          "type": "string",
+          "description": "The message to send to Loom",
+          "required": true
+        },
+        {
+          "name": "conversationHistory",
+          "type": "array",
+          "items_type": "object",
+          "description": "Previous messages in this conversation for context",
+          "required": false,
+          "default": []
+        }
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "update_memory",
+      "description": "Manually update fields in project memory",
+      "parameters": [
+        {
+          "name": "updates",
+          "type": "object",
+          "description": "Key-value pairs to update in the project memory",
+          "required": true
+        }
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "end_session",
+      "description": "End the current session and save a note about where you left off",
+      "parameters": [
+        {
+          "name": "sessionNote",
+          "type": "string",
+          "description": "A note about what was done this session and where you left off",
+          "required": false
+        }
+      ],
+      "timeout": 30
+    }
+  ],
+  "runtime": { "type": "binary" }
+}

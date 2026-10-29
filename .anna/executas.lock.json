@@ -1,0 +1,11 @@
+{
+  "$schema": "anna-executas-lock/v1",
+  "host": "https://anna.partners",
+  "executas": {
+    "loom-agent": {
+      "tool_id": "tool-300joh_4537-loom-agent-qzqg3mpc",
+      "path": "executas/loom-agent",
+      "source": "cut"
+    }
+  }
+}

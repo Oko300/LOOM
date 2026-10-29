@@ -1,0 +1,129 @@
+name: Build Loom Agent Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: node18-linux-x64
+            platform: linux-x86_64
+            ext: tar.gz
+            entry: loom-agent
+
+          - os: macos-13          # Intel runner
+            target: node18-macos-x64
+            platform: darwin-x86_64
+            ext: tar.gz
+            entry: loom-agent
+
+          - os: macos-latest      # Apple Silicon runner
+            target: node18-macos-arm64
+            platform: darwin-arm64
+            ext: tar.gz
+            entry: loom-agent
+
+          - os: windows-latest
+            target: node18-win-x64
+            platform: windows-x86_64
+            ext: zip
+            entry: loom-agent.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: LOOM/executas/loom-agent
+        run: npm install
+
+      - name: Build binary
+        working-directory: LOOM/executas/loom-agent
+        run: npx @yao-pkg/pkg@5.12.0 . --targets ${{ matrix.target }} --out-path dist-bin
+
+      - name: Create dist dir (Unix)
+        if: matrix.ext == 'tar.gz'
+        run: mkdir -p LOOM/executas/loom-agent/dist
+        shell: bash
+
+      - name: Create dist dir (Windows)
+        if: matrix.ext == 'zip'
+        run: New-Item -Force -ItemType Directory LOOM/executas/loom-agent/dist | Out-Null
+        shell: pwsh
+
+      - name: Rename & package (Unix)
+        if: matrix.ext == 'tar.gz'
+        working-directory: LOOM/executas/loom-agent/dist-bin
+        run: |
+          # pkg may name the binary with a suffix — normalise to plain entry name
+          find . -maxdepth 1 -type f ! -name "${{ matrix.entry }}" -exec mv {} ${{ matrix.entry }} \; 2>/dev/null || true
+          tar -czf ../dist/loom-agent-1.0.2-${{ matrix.platform }}.tar.gz ${{ matrix.entry }}
+        shell: bash
+
+      - name: Rename & package (Windows)
+        if: matrix.ext == 'zip'
+        working-directory: LOOM/executas/loom-agent
+        shell: pwsh
+        run: |
+          $src = Get-ChildItem dist-bin -File | Select-Object -First 1
+          if ($src.Name -ne "${{ matrix.entry }}") {
+            Rename-Item $src.FullName "${{ matrix.entry }}"
+          }
+          Compress-Archive -Force `
+            -Path "dist-bin\${{ matrix.entry }}" `
+            -DestinationPath "dist\loom-agent-1.0.2-${{ matrix.platform }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loom-agent-${{ matrix.platform }}
+          path: LOOM/executas/loom-agent/dist/loom-agent-1.0.2-${{ matrix.platform }}.${{ matrix.ext }}
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only create a release when triggered by a tag push
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-all
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Loom Agent ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: dist-all/**/*
+          body: |
+            ## Loom Agent ${{ github.ref_name }}
+
+            Binary executas for all supported platforms:
+
+            | Platform | File |
+            |---|---|
+            | macOS Apple Silicon | `loom-agent-1.0.2-darwin-arm64.tar.gz` |
+            | macOS Intel         | `loom-agent-1.0.2-darwin-x86_64.tar.gz` |
+            | Linux x64           | `loom-agent-1.0.2-linux-x86_64.tar.gz` |
+            | Windows x64         | `loom-agent-1.0.2-windows-x86_64.zip` |

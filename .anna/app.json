@@ -1,0 +1,8 @@
+{
+  "$schema": "anna-app-identity/v1",
+  "host": "https://anna.partners",
+  "app_id": 690,
+  "slug": "loom",
+  "handle": "flowdev",
+  "first_published_at": "2026-10-24T23:37:38.593Z"
+}
