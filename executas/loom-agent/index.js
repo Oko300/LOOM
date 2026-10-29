@@ -1,6 +1,5 @@
 'use strict';
 
-const { io } = require('socket.io-client');
 const readline = require('readline');
 
 // ─── JSON-RPC over stdio ───────────────────────────────────────────────────
@@ -44,6 +43,11 @@ function connectFlowDev(token) {
   if (fdSocket && fdSocket.connected && fdToken === token) return;
   fdToken = token;
   if (fdSocket) fdSocket.disconnect();
+
+  // Lazy-load socket.io-client here (not at top-level) so the binary
+  // can start up cleanly and respond to 'describe' even if the module
+  // has any native-binding issues on the host's OS.
+  const { io } = require('socket.io-client');
 
   fdSocket = io('https://flowdev.onrender.com', {
     query: { userId: token },
@@ -432,7 +436,7 @@ async function dispatch(method, params, id) {
       respond(id, {
         name: 'loom-agent',
         display_name: 'Loom Agent',
-        version: '1.0.2',
+        version: '1.0.3',
         description: 'AI-powered project memory engine. Uses Anna LLM to analyze VS Code workspaces and power context-aware coding conversations.',
         tools: [
           {

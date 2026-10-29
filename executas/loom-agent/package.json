@@ -1,6 +1,6 @@
 {
   "name": "loom-agent",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Loom backend executa — project memory + FlowDev bridge",
   "main": "index.js",
   "type": "commonjs",
