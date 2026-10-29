@@ -495,14 +495,6 @@
 
 <script src="anna-tool-ids.js"></script>
 <script type="module">
-let AnnaAppRuntime;
-try {
-  const mod = await import('/static/anna-apps/_sdk/latest/index.js');
-  AnnaAppRuntime = mod.AnnaAppRuntime;
-} catch (e) {
-  console.warn('[Loom] Anna SDK import failed:', e.message);
-}
-
 // ═══════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════
@@ -512,11 +504,18 @@ let conversationHistory = [];
 let isWaiting = false;
 
 // ═══════════════════════════════════════════
-//  ANNA SDK — connect + wrap tool calls
+//  ANNA SDK — lazy load + connect
 // ═══════════════════════════════════════════
 async function ensureAnna() {
   if (!anna) {
-    if (!AnnaAppRuntime) throw new Error('Anna SDK unavailable. Make sure this app is open inside Anna AI.');
+    let AnnaAppRuntime;
+    try {
+      const mod = await import('/static/anna-apps/_sdk/latest/index.js');
+      AnnaAppRuntime = mod.AnnaAppRuntime;
+    } catch (e) {
+      throw new Error('Could not load Anna SDK: ' + e.message + '. Make sure Loom is open inside Anna AI.');
+    }
+    if (!AnnaAppRuntime) throw new Error('Anna SDK loaded but AnnaAppRuntime not found.');
     anna = await AnnaAppRuntime.connect();
   }
   return anna;
