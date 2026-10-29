@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             target: node18-linux-x64
             platform: linux-x86_64
             ext: tar.gz
