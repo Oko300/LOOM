@@ -77,15 +77,13 @@ jobs:
         shell: pwsh
         run: |
           $distBin = "executas\loom-agent\dist-bin"
-          $dest = "${{ matrix.entry }}"
-          $src = Get-ChildItem $distBin | Select-Object -First 1
-          # Only rename if the file is not already named correctly
-          if ($src.Name -ne $dest) {
-            Rename-Item $src.FullName $dest
+          $outZip  = "executas\loom-agent\dist\loom-agent-1.0.2-${{ matrix.platform }}.zip"
+          $src = Get-ChildItem $distBin -File | Select-Object -First 1
+          $target = Join-Path $distBin "${{ matrix.entry }}"
+          if ($src.FullName -ne $target) {
+            Copy-Item $src.FullName $target
           }
-          Compress-Archive -Force `
-            -Path "$distBin\$dest" `
-            -DestinationPath "executas\loom-agent\dist\loom-agent-1.0.2-${{ matrix.platform }}.zip"
+          Compress-Archive -Force -Path $target -DestinationPath $outZip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
