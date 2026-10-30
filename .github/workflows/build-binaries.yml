@@ -70,14 +70,14 @@ jobs:
             [ -f "$f" ] && mv "$f" "${{ matrix.entry }}" && break
           done
           chmod +x "${{ matrix.entry }}"
-          tar -czf "../dist/loom-agent-1.0.3-${{ matrix.platform }}.tar.gz" "${{ matrix.entry }}"
+          tar -czf "../dist/loom-agent-1.0.4-${{ matrix.platform }}.tar.gz" "${{ matrix.entry }}"
 
       - name: Package zip (Windows)
         if: matrix.ext == 'zip'
         shell: pwsh
         run: |
           $distBin = "executas\loom-agent\dist-bin"
-          $outZip  = "executas\loom-agent\dist\loom-agent-1.0.3-${{ matrix.platform }}.zip"
+          $outZip  = "executas\loom-agent\dist\loom-agent-1.0.4-${{ matrix.platform }}.zip"
           $src = Get-ChildItem $distBin -File | Select-Object -First 1
           $target = Join-Path $distBin "${{ matrix.entry }}"
           if ($src.FullName -ne $target) {
@@ -89,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: loom-agent-${{ matrix.platform }}
-          path: executas/loom-agent/dist/loom-agent-1.0.3-${{ matrix.platform }}.${{ matrix.ext }}
+          path: executas/loom-agent/dist/loom-agent-1.0.4-${{ matrix.platform }}.${{ matrix.ext }}
 
   commit-binaries:
     needs: build
@@ -111,5 +111,5 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add executas/loom-agent/dist/
-          git diff --cached --quiet || git commit -m "chore: add v1.0.3 binaries [skip ci]"
+          git diff --cached --quiet || git commit -m "chore: add v1.0.4 binaries [skip ci]"
           git push

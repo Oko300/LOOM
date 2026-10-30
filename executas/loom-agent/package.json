@@ -1,6 +1,6 @@
 {
   "name": "loom-agent",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Loom backend executa — project memory + FlowDev bridge",
   "main": "index.js",
   "type": "commonjs",
@@ -14,7 +14,11 @@
   },
   "pkg": {
     "assets": [],
-    "scripts": [],
+    "scripts": [
+      "node_modules/socket.io-client/build/cjs/**/*.js",
+      "node_modules/engine.io-client/build/cjs/**/*.js",
+      "node_modules/@socket.io/component-emitter/build/cjs/**/*.js"
+    ],
     "targets": [
       "node18-macos-arm64",
       "node18-macos-x64",
